@@ -1,0 +1,6 @@
+---
+collections:
+  - name: cisco.intersight
+    version: "2.12.0"
+    
+  - name: ansible.utils
