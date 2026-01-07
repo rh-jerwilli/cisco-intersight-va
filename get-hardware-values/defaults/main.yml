@@ -1,22 +1,8 @@
 #SPDX-License-Identifier: MIT-0
 ---
-# ===== Intersight API =====
 intersight_api_uri: "https://us-east-1.intersight.com/api/v1"
-
-# Optional: can be overridden by survey or credential env
-intersight_target_hostname: ""
-
-# ===== Discovery behavior =====
-intersight_discover_top: 200
-intersight_discover_name_regex: ".*"
-
-# ===== Output =====
+intersight_target_hostnames: []
+intersight_name_prefix: ""
+intersight_discover_top: 500
 intersight_out_dir: "./out"
-intersight_write_per_node_files: true
-intersight_write_combined_file: true
-
-# ===== Auth =====
-intersight_api_key_id: "{{ lookup('env', 'INTERSIGHT_API_KEY_ID') | default('', true) }}"
-intersight_api_private_key: "{{ lookup('env', 'INTERSIGHT_API_PRIVATE_KEY') | default('', true) }}"
-intersight_api_uri_from_env: "{{ lookup('env', 'INTERSIGHT_API_URI') | default('', true) }}"
-intersight_hostname_from_env: "{{ lookup('env', 'INTERSIGHT_HOSTNAME') | default('', true) }}"
+intersight_artifact_filename: "hosts_payload.yml"
