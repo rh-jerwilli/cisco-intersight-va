@@ -1,15 +1,15 @@
 ---
 - name: Read Intersight auth from environment (AAP credential injectors)
   ansible.builtin.set_fact:
-    _intersight_api_key_id: "{{ lookup('env','INTERSIGHT_API_KEY_ID') | default('', true) }}"
-    _intersight_api_private_key: "{{ lookup('env','INTERSIGHT_API_PRIVATE_KEY') | default('', true) }}"
-    _intersight_api_uri: "{{ lookup('env','INTERSIGHT_API_URI') | default(intersight_api_uri | default('https://us-east-1.intersight.com/api/v1'), true) }}"
+    intersight_api_key_id: "{{ lookup('env','INTERSIGHT_API_KEY_ID') | default('', true) }}"
+    intersight_api_private_key: "{{ lookup('env','INTERSIGHT_API_PRIVATE_KEY') | default('', true) }}"
+    intersight_api_uri: "{{ lookup('env','INTERSIGHT_API_URI') | default(intersight_api_uri | default('https://us-east-1.intersight.com/api/v1'), true) }}"
 
 - name: Validate auth is present
   ansible.builtin.assert:
     that:
-      - _intersight_api_key_id | length > 0
-      - _intersight_api_private_key | length > 0
+      - intersight_api_key_id | length > 0
+      - intersight_api_private_key | length > 0
     fail_msg: >
       Missing INTERSIGHT_API_KEY_ID and/or INTERSIGHT_API_PRIVATE_KEY.
       Ensure your AAP custom credential injects these environment variables.
