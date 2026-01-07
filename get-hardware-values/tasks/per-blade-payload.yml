@@ -1,0 +1,68 @@
+---
+- name: Query server profile assigned to {{ blade_item.Name }}
+  cisco.intersight.intersight_rest_api:
+    return_list: true
+    api_uri: "{{ _intersight_api_uri }}"
+    api_key_id: "{{ _intersight_api_key_id }}"
+    api_private_key: "{{ _intersight_api_private_key }}"
+    resource_path: /server/Profiles
+    query_params:
+      $filter: "AssignedServer.Moid eq '{{ blade_item.Moid }}'"
+      $select: "Name,Moid,AssignedServer,SrcTemplate"
+  register: _profiles
+
+- name: Fail if no profile is assigned to {{ blade_item.Name }}
+  ansible.builtin.assert:
+    that:
+      - (_profiles.api_response | default([]) | length) > 0
+    fail_msg: "No server profile assigned to blade {{ blade_item.Name }}"
+
+- name: Select profile for {{ blade_item.Name }}
+  ansible.builtin.set_fact:
+    _profile: "{{ _profiles.api_response[0] }}"
+    _profile_moid: "{{ _profiles.api_response[0].Moid }}"
+
+- name: Query vNICs for profile {{ _profile.Name }}
+  cisco.intersight.intersight_rest_api:
+    return_list: true
+    api_uri: "{{ _intersight_api_uri }}"
+    api_key_id: "{{ _intersight_api_key_id }}"
+    api_private_key: "{{ _intersight_api_private_key }}"
+    resource_path: /vnic/EthIfs
+    query_params:
+      $filter: "Profile.Moid eq '{{ _profile_moid }}'"
+      $select: "Name,MacAddress,AssignmentMode,Placement,Profile"
+  register: _vnics
+
+- name: Choose boot MAC for {{ blade_item.Name }}
+  ansible.builtin.set_fact:
+    _boot_mac: "{{ (_vnics.api_response | default([]) | map(attribute='MacAddress') | list | first) | default('') }}"
+
+- name: Initialize interfaces list for {{ blade_item.Name }}
+  ansible.builtin.set_fact:
+    _interfaces_list: []
+
+- name: Append interface MAC for {{ blade_item.Name }}
+  ansible.builtin.set_fact:
+    _interfaces_list: "{{ _interfaces_list + [ {'macAddress': item.MacAddress} ] }}"
+  loop: "{{ _vnics.api_response | default([]) }}"
+  loop_control:
+    loop_var: item
+
+- name: Append host record for {{ blade_item.Name }}
+  ansible.builtin.set_fact:
+    _hosts: >-
+      {{
+        _hosts + [
+          {
+            'name': blade_item.Name,
+            'bmcUsername': '',
+            'bmcPassword': '',
+            'bmcEndpoint': '',
+            'bootMACAddress': _boot_mac,
+            'interfaces': _interfaces_list,
+            'primaryMac': _boot_mac,
+            'IP': ''
+          }
+        ]
+      }}

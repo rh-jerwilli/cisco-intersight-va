@@ -1,0 +1,93 @@
+---
+- name: Read Intersight auth from environment (AAP credential injectors)
+  ansible.builtin.set_fact:
+    _intersight_api_key_id: "{{ lookup('env','INTERSIGHT_API_KEY_ID') | default('', true) }}"
+    _intersight_api_private_key: "{{ lookup('env','INTERSIGHT_API_PRIVATE_KEY') | default('', true) }}"
+    _intersight_api_uri: "{{ lookup('env','INTERSIGHT_API_URI') | default(intersight_api_uri | default('https://us-east-1.intersight.com/api/v1'), true) }}"
+
+- name: Validate auth is present
+  ansible.builtin.assert:
+    that:
+      - _intersight_api_key_id | length > 0
+      - _intersight_api_private_key | length > 0
+    fail_msg: >
+      Missing INTERSIGHT_API_KEY_ID and/or INTERSIGHT_API_PRIVATE_KEY.
+      Ensure your AAP custom credential injects these environment variables.
+
+- name: Validate target hostnames list
+  ansible.builtin.assert:
+    that:
+      - intersight_target_hostnames is iterable
+      - intersight_target_hostnames | length > 0
+      - (intersight_target_hostnames | unique | length) == (intersight_target_hostnames | length)
+    fail_msg: >
+      intersight_target_hostnames must be a non-empty list with no duplicates.
+
+- name: Ensure output directory exists
+  ansible.builtin.file:
+    path: "{{ intersight_out_dir | default('./out') }}"
+    state: directory
+    mode: "0750"
+
+- name: Fetch blades (bounded by prefix if provided)
+  cisco.intersight.intersight_rest_api:
+    return_list: true
+    api_uri: "{{ _intersight_api_uri }}"
+    api_key_id: "{{ _intersight_api_key_id }}"
+    api_private_key: "{{ _intersight_api_private_key }}"
+    resource_path: /compute/Blades
+    query_params:
+      $top: "{{ intersight_discover_top | default(500) }}"
+      $select: "Name,Moid,Model,Serial"
+      $filter: >-
+        {{
+          (intersight_name_prefix | default('', true) | length > 0)
+          | ternary("startswith(Name,'{{ intersight_name_prefix }}')", omit)
+        }}
+  register: _blades
+
+- name: Build lookup map of blades by Name
+  ansible.builtin.set_fact:
+    _blades_by_name: "{{ dict((_blades.api_response | default([])) | map(attribute='Name') | zip((_blades.api_response | default([]))) ) }}"
+
+- name: Identify missing hostnames
+  ansible.builtin.set_fact:
+    _missing_hostnames: "{{ intersight_target_hostnames | difference(_blades_by_name.keys() | list) }}"
+
+- name: Fail if any hostnames are missing
+  ansible.builtin.assert:
+    that:
+      - _missing_hostnames | length == 0
+    fail_msg: >
+      These hostnames were not found in the fetched blade set: {{ _missing_hostnames }}.
+      Increase intersight_discover_top or set intersight_name_prefix.
+
+- name: Build ordered target blades list
+  ansible.builtin.set_fact:
+    _target_blades: "{{ intersight_target_hostnames | map('extract', _blades_by_name) | list }}"
+
+- name: Initialize hosts list
+  ansible.builtin.set_fact:
+    _hosts: []
+
+- name: Build one host entry per blade
+  ansible.builtin.include_tasks: per_blade_payload.yml
+  loop: "{{ _target_blades }}"
+  loop_control:
+    loop_var: blade_item
+
+- name: Set final payload fact for workflow consumption
+  ansible.builtin.set_fact:
+    intersight_hosts_payload:
+      hosts: "{{ _hosts }}"
+
+- name: Publish payload as AAP workflow artifact
+  ansible.builtin.set_stats:
+    data:
+      intersight_hosts_payload: "{{ intersight_hosts_payload }}"
+    per_host: false
+
+- name: Write payload file artifact
+  ansible.builtin.copy:
+    dest: "{{ intersight_out_dir | default('./out') }}/{{ intersight_artifact_filename | default('hosts_payload.yml') }}"
+    content: "{{ intersight_hosts_payload | to_nice_yaml(indent=2) }}"
