@@ -14,6 +14,15 @@
       Missing INTERSIGHT_API_KEY_ID and/or INTERSIGHT_API_PRIVATE_KEY.
       Ensure your AAP custom credential injects these environment variables.
 
+- name: Write private key to a temp file
+  ansible.builtin.copy:
+    dest: /tmp/intersight_key.pem
+    content: "{{ intersight_api_private_key }}"
+    mode: "0600"
+
+- name: Read private key back from file (sanity)
+  ansible.builtin.set_fact:
+    intersight_api_private_key: "{{ lookup('ansible.builtin.file', '/tmp/intersight_key.pem') }}"
 # - name: Normalize intersight_target_hostnames into a real list (single source of truth)
 #   ansible.builtin.set_fact:
 #     _hostnames_norm: >-
