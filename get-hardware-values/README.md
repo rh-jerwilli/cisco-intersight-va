@@ -1,38 +1,41 @@
-Role Name
-=========
+get-hardware-values
 
-A brief description of the role goes here.
+This role queries Cisco Intersight for UCS hardware information and generates host-related variables used to populate OpenShift installation inputs.
+
+It is designed to run in Ansible Automation Platform using a custom credential for Intersight authentication and optional host targeting.
+
+The role discovers blades, identifies assigned server profiles, retrieves vNIC MAC addresses, and builds host data structures suitable for rendering into a values or vars file.
 
 Requirements
-------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+Ansible core 2.15 or newer is required.
 
-Role Variables
---------------
+The cisco.intersight collection version 2.12.0 must be installed.
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+An AAP custom credential must provide the Intersight API key ID and private key. The private key must be provided as PEM content.
 
-Dependencies
-------------
+Inputs
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+Authentication values are expected from environment variables injected by AAP.
 
-Example Playbook
-----------------
+The hostname may be provided either through a variable or through the credential as a default.
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+If no hostname is provided, the role will discover blades and process all matching systems.
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+Outputs
 
-License
--------
+The role generates structured host data including MAC addresses derived from vNICs.
 
-BSD
+Output files are written to the configured output directory and can be consumed by downstream OpenShift installation workflows.
 
-Author Information
-------------------
+Usage
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+The role is intended to be executed from a simple play that targets localhost and includes this role.
+
+Configuration values may be overridden using inventory variables, surveys, or vars files.
+
+Notes
+
+BMC credentials and host IP addresses are not sourced from Intersight and must be provided separately if required by the installation process.
+
+This role focuses on removing the hardware team dependency for hardware discovery and network identity generation.
