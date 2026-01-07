@@ -23,6 +23,36 @@
         else [intersight_target_hostnames]
       }}
 
+- name: Debug raw type and value of intersight_target_hostnames (temporary)
+  ansible.builtin.debug:
+    msg:
+      - "type={{ intersight_target_hostnames | type_debug }}"
+      - "value={{ intersight_target_hostnames }}"
+
+- name: Normalize intersight_target_hostnames from AAP survey into a real list
+  ansible.builtin.set_fact:
+    _hostnames_parsed: >-
+      {{
+        (intersight_target_hostnames | from_yaml)
+        if (intersight_target_hostnames is string and (intersight_target_hostnames | trim) is regex('^\\s*(\\-|\\[)'))
+        else intersight_target_hostnames
+      }}
+
+- name: Force hostnames into list form
+  ansible.builtin.set_fact:
+    intersight_target_hostnames: >-
+      {{
+        _hostnames_parsed
+        if (_hostnames_parsed is sequence and (_hostnames_parsed is not string) and (_hostnames_parsed is not mapping))
+        else [_hostnames_parsed]
+      }}
+
+- name: Debug normalized type and value (temporary)
+  ansible.builtin.debug:
+    msg:
+      - "type={{ intersight_target_hostnames | type_debug }}"
+      - "value={{ intersight_target_hostnames }}"
+
 - name: Validate target hostnames list
   ansible.builtin.assert:
     that:
