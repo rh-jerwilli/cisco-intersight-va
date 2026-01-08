@@ -19,8 +19,8 @@
 #     intersight_target_hostnames: "{{ (intersight_target_hostnames | default('') | string).split('\n') }}"
 
 - name: Normalize intersight_target_hostnames into a list
-  set_fact:
-    blade_hostnames_list: >-
+  ansible.builtin.set_fact:
+    intersight_target_hostnames_list: >-
       {{
         (
           intersight_target_hostnames
@@ -32,8 +32,15 @@
         )
         | map('trim')
         | reject('equalto','')
+        | unique
         | list
       }}
+
+- name: Debug normalized hostnames (temporary)
+  ansible.builtin.debug:
+    msg:
+      - "type={{ intersight_target_hostnames_list | type_debug }}"
+      - "value={{ intersight_target_hostnames_list }}"
 
 # - name: De-duplicate hostnames (after normalization)
 #   ansible.builtin.set_fact:
@@ -92,6 +99,21 @@
     msg:
       - "type={{ intersight_target_hostnames_list | type_debug }}"
       - "value={{ intersight_target_hostnames_list }}"
+
+# - name: Query each blade by hostname
+#   cisco.intersight.intersight_rest_api:
+#     return_list: true
+#     api_uri: "{{ intersight_api_uri }}"
+#     api_key_id: "{{ intersight_api_key_id }}"
+#     api_private_key: "{{ (intersight_api_private_key | b64decode) | trim }}"
+#     resource_path: /compute/Blades
+#     query_params:
+#       $filter: "Name eq '{{ item }}'"
+#       $select: "Name,Moid,Model,Serial"
+#   loop: "{{ intersight_target_hostnames_list }}"
+#   loop_control:
+#     label: "{{ item }}"
+#   register: _blade_queries
 
 - name: Query each blade by hostname
   cisco.intersight.intersight_rest_api:
