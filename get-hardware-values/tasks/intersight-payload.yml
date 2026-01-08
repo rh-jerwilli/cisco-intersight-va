@@ -14,22 +14,20 @@
       Missing INTERSIGHT_API_KEY_ID and/or INTERSIGHT_API_PRIVATE_KEY.
       Ensure your AAP custom credential injects these environment variables.
 
-# - name: Normalize hostnames (one per line)
-#   ansible.builtin.set_fact:
-#     intersight_target_hostnames: >-
-#       {{
-#         (intersight_target_hostnames | default('') )
-#         | string
-#         | splitlines
-#         | map('trim')
-#         | select('ne','')
-#         | list
-#       }}
+- name: Normalize hostnames from multiline extra_vars (one per line)
+  ansible.builtin.set_fact:
+    intersight_target_hostnames: >-
+      {{
+        (intersight_target_hostnames | default('') | string)
+        | split('\n')
+        | map('trim')
+        | select('ne','')
+        | list
+      }}
 
 - name: De-duplicate hostnames
   ansible.builtin.set_fact:
     intersight_target_hostnames: "{{ intersight_target_hostnames | unique | list }}"
-
 
 - name: Ensure output directory exists
   ansible.builtin.file:
@@ -58,16 +56,6 @@
   ansible.builtin.set_fact:
     _blades_by_name: "{{ dict((_blades.api_response | default([])) | map(attribute='Name') | zip((_blades.api_response | default([]))) ) }}"
 
-- name: Normalize hostnames from multiline extra_vars (one per line)
-  ansible.builtin.set_fact:
-    intersight_target_hostnames: >-
-      {{
-        (intersight_target_hostnames | default('') | string)
-        | split('\n')
-        | map('trim')
-        | select('ne','')
-        | list
-      }}
 - name: Identify missing hostnames
   ansible.builtin.set_fact:
     _missing_hostnames: "{{ intersight_target_hostnames | difference(_blades_by_name.keys() | list) }}"
