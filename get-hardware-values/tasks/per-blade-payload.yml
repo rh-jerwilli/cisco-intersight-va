@@ -49,6 +49,10 @@
   loop_control:
     loop_var: item
 
+- name: Deduplicate discovered hosts by name
+  ansible.builtin.set_fact:
+    _hosts: "{{ _hosts | unique(attribute='name') | list }}"
+
 - name: Append host record for {{ blade_item.Name }}
   ansible.builtin.set_fact:
     _hosts: >-
