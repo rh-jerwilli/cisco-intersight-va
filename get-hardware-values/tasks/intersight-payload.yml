@@ -35,7 +35,7 @@
     return_list: true
     api_uri: "{{ intersight_api_uri }}"
     api_key_id: "{{ intersight_api_key_id }}"
-    api_private_key: "{{ intersight_api_priv_key | b64decode }}"
+    api_private_key: "{{ intersight_api_private_key | b64decode }}"
     resource_path: /compute/Blades
     query_params:
       $top: "{{ intersight_discover_top | default(500) }}"
