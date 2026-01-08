@@ -4,7 +4,7 @@
     return_list: true
     api_uri: "{{ intersight_api_uri }}"
     api_key_id: "{{ intersight_api_key_id }}"
-    api_private_key: "{{ intersight_api_private_key }}"
+    api_private_key: "{{ (intersight_api_private_key | b64decode) | trim }}"
     resource_path: /server/Profiles
     query_params:
       $filter: "AssignedServer.Moid eq '{{ blade_item.Moid }}'"
@@ -27,7 +27,7 @@
     return_list: true
     api_uri: "{{ intersight_api_uri }}"
     api_key_id: "{{ intersight_api_key_id }}"
-    api_private_key: "{{ intersight_api_private_key }}"
+    api_private_key: "{{ (intersight_api_private_key | b64decode) | trim }}"
     resource_path: /vnic/EthIfs
     query_params:
       $filter: "Profile.Moid eq '{{ profile_moid }}'"
