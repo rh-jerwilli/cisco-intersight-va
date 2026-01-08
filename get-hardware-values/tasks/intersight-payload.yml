@@ -14,19 +14,20 @@
       Missing INTERSIGHT_API_KEY_ID and/or INTERSIGHT_API_PRIVATE_KEY.
       Ensure your AAP custom credential injects these environment variables.
 
-- name: Canonicalize target hostnames into a real list
+- name: Canonicalize target hostnames into a real list (whitespace + comma tolerant)
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: >-
       {{
         (
           intersight_target_hostnames
           if intersight_target_hostnames is string
-          else (intersight_target_hostnames | join('\n'))
+          else (intersight_target_hostnames | join(' '))
         )
-        | replace('\r','')
-        | replace('\\n', '\n')
-        | regex_replace(',', '\n')
-        | split('\n')
+        | string
+        | replace('\r', ' ')
+        | replace('\\n', ' ')          # handles literal backslash-n
+        | regex_replace(',', ' ')      # commas become spaces
+        | regex_findall('[^\\s]+')     # split on ANY whitespace
         | map('trim')
         | reject('equalto','')
         | unique
@@ -42,7 +43,9 @@
 
 - name: Debug canonical list (temporary)
   ansible.builtin.debug:
-    var: intersight_target_hostnames_list
+    msg:
+      raw_json: "{{ (intersight_target_hostnames | string) | to_json }}"
+      canonical: "{{ intersight_target_hostnames_list }}"
 
 - name: Debug hostnames right before API work (temporary)
   ansible.builtin.debug:
@@ -60,7 +63,7 @@
 - name: Validate hostname input is non-empty
   ansible.builtin.assert:
     that:
-      - intersight_target_hostnames | length > 0
+      - intersight_target_hostnames_list | length > 0
     fail_msg: "Paste one blade hostname per line into intersight_target_hostnames."
 
 - name: Initialize target blade list and missing list
