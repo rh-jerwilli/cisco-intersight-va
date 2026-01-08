@@ -64,7 +64,7 @@
 
 - name: Identify missing hostnames
   ansible.builtin.set_fact:
-    missing_hostnames: "{{ intersight_target_hostnames }}"
+    _missing_hostnames: "{{ intersight_target_hostnames }}"
     # _missing_hostnames: "{{ intersight_target_hostnames | difference(_blades_by_name.keys() ) }}"
 
 - name: Fail if any hostnames are missing
