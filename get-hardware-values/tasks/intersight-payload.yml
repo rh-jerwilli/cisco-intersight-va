@@ -23,17 +23,16 @@
         else (intersight_target_hostnames | string)
       }}
 
-- name: Split raw into a real hostname list
+- name: Split raw into a real hostname list (tokenize)
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: >-
       {{
         _targets_raw
-        | replace('\r', '\n')
-        | replace('\\n', '\n')
-        | regex_replace(',', '\n')
-        | split('\n')
-        | map('trim')
-        | reject('equalto','')
+        | replace('\r', ' ')
+        | replace('\\n', ' ')
+        | regex_replace('(?m)^\\s*-\\s*', ' ')
+        | regex_replace(',', ' ')
+        | regex_findall('[^\\s]+')
         | unique
         | list
       }}
@@ -46,20 +45,6 @@
     that:
       - intersight_target_hostnames_list | length > 0
     fail_msg: "Paste one blade hostname per line (or comma-separated) into intersight_target_hostnames."
-
-
-- name: Debug canonical list (temporary)
-  ansible.builtin.debug:
-    msg:
-      raw_json: "{{ (intersight_target_hostnames | string) | to_json }}"
-      canonical: "{{ intersight_target_hostnames_list }}"
-
-- name: Debug hostnames right before API work (temporary)
-  ansible.builtin.debug:
-    msg:
-      - "type={{ intersight_target_hostnames | type_debug }}"
-      - "value={{ intersight_target_hostnames }}"
-
 
 - name: Ensure output directory exists
   ansible.builtin.file:
