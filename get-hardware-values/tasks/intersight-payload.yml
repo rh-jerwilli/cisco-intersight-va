@@ -23,28 +23,27 @@
         else (intersight_target_hostnames | string)
       }}
 
-- name: Split raw into a real hostname list (newline -> space -> split)
+- name: Split raw into a real hostname list (regex newlines)
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: >-
       {{
         (
           _targets_raw
-          | replace('\r', ' ')
-          | replace('\\n', ' ')
-          | replace('\n', ' ')
+          | regex_replace('[\\r\\n]+', ' ')
           | regex_replace(',', ' ')
           | regex_replace('\\s+', ' ')
           | trim
         ).split(' ')
-        | map('trim')
         | reject('equalto','')
         | unique
         | list
       }}
 
-- name: Debug canonical list (temporary)
-  ansible.builtin.debug:
-    var: intersight_target_hostnames_list
+- ansible.builtin.debug:
+    msg:
+      raw: "{{ _targets_raw | to_json }}"
+      list: "{{ intersight_target_hostnames_list }}"
+
 - name: Validate hostname input is non-empty
   ansible.builtin.assert:
     that:
