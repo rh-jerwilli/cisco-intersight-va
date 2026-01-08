@@ -14,17 +14,17 @@
       Missing INTERSIGHT_API_KEY_ID and/or INTERSIGHT_API_PRIVATE_KEY.
       Ensure your AAP custom credential injects these environment variables.
 
-- name: Normalize hostnames (one per line)
-  ansible.builtin.set_fact:
-    intersight_target_hostnames: >-
-      {{
-        (intersight_target_hostnames | default('') )
-        | string
-        | splitlines
-        | map('trim')
-        | select('ne','')
-        | list
-      }}
+# - name: Normalize hostnames (one per line)
+#   ansible.builtin.set_fact:
+#     intersight_target_hostnames: >-
+#       {{
+#         (intersight_target_hostnames | default('') )
+#         | string
+#         | splitlines
+#         | map('trim')
+#         | select('ne','')
+#         | list
+#       }}
 
 - name: Validate hostnames list
   ansible.builtin.assert:
@@ -67,7 +67,7 @@
     intersight_target_hostnames: >-
       {{
         (intersight_target_hostnames | default('') | string)
-        | splitlines
+        | split('\n')
         | map('trim')
         | select('ne','')
         | list
