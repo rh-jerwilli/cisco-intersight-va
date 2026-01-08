@@ -23,44 +23,6 @@
 - name: Read private key back from file (sanity)
   ansible.builtin.set_fact:
     intersight_api_private_key: "{{ lookup('ansible.builtin.file', '/tmp/intersight_key.pem') }}"
-# - name: Normalize intersight_target_hostnames into a real list (single source of truth)
-#   ansible.builtin.set_fact:
-#     _hostnames_norm: >-
-#       {%- set v = intersight_target_hostnames | default('', true) -%}
-#       {%- if v is string -%}
-#       {%-   set s = v | trim -%}
-#       {%-   if s == '' -%}
-#       {{ [] }}
-#       {%-   elif s.startswith('-') or s.startswith('[') -%}
-#       {{ s | from_yaml }}
-#       {%-   else -%}
-#       {{ [s] }}
-#       {%-   endif -%}
-#       {%- elif v is sequence and (v is not mapping) -%}
-#       {{ v }}
-#       {%- else -%}
-#       {{ [v] }}
-#       {%- endif -%}
-
-# - name: Force normalized hostnames into native list type
-#   ansible.builtin.set_fact:
-#     intersight_target_hostnames: "{{ _hostnames_norm | to_json | from_json }}"
-
-# - name: Validate target hostnames list
-#   ansible.builtin.assert:
-#     that:
-#       - intersight_target_hostnames | length > 0
-#       - ((intersight_target_hostnames | map('string') | map('trim') | list) | unique | length) ==
-#         (intersight_target_hostnames | length)
-#       - (intersight_target_hostnames | map('string') | map('trim') | select('ne','') | list | length) ==
-#         (intersight_target_hostnames | length)
-#     fail_msg: >
-#       intersight_target_hostnames must be a non-empty list with no duplicates.
-#       In AAP Survey, paste either:
-#       - RTP-UCS-WS-Pod-01-1-1
-#       or:
-#       RTP-UCS-WS-Pod-01-1-1
-
 
 - name: Ensure output directory exists
   ansible.builtin.file:
@@ -73,7 +35,7 @@
     return_list: true
     api_uri: "{{ intersight_api_uri }}"
     api_key_id: "{{ intersight_api_key_id }}"
-    api_private_key: "{{ intersight_api_private_key }}"
+    api_private_key: "{{ intersight_api_priv_key | b64decode }}"
     resource_path: /compute/Blades
     query_params:
       $top: "{{ intersight_discover_top | default(500) }}"
