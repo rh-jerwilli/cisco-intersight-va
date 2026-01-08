@@ -68,9 +68,9 @@
         | select('ne','')
         | list
       }}
-# - name: Identify missing hostnames
-#   ansible.builtin.set_fact:
-#     _missing_hostnames: "{{ intersight_target_hostnames | difference(_blades_by_name.keys() | list) }}"
+- name: Identify missing hostnames
+  ansible.builtin.set_fact:
+    _missing_hostnames: "{{ intersight_target_hostnames | difference(_blades_by_name.keys() | list) }}"
 
 - name: Fail if any hostnames are missing
   ansible.builtin.assert:
