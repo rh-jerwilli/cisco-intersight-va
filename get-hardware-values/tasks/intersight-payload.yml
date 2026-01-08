@@ -134,6 +134,10 @@
       These hostnames were not found as compute.Blades in Intersight: {{ _missing_hostnames }}.
       Make sure you pasted blade hostnames (not chassis names) and that Intersight inventory is up to date.
 
+- name: Deduplicate target blades by Moid
+  ansible.builtin.set_fact:
+    _target_blades: "{{ _target_blades | unique(attribute='Moid') | list }}"
+
 - name: Initialize hosts output list
   ansible.builtin.set_fact:
     _hosts: []
