@@ -81,18 +81,18 @@
     _target_blades: []
     _missing_hostnames: []
 
-- name: Build authoritative hostname list for looping
-  ansible.builtin.set_fact:
-    intersight_target_hostnames_list: >-
-      {{
-        (
-          (intersight_target_hostnames | default('') | string).split('\n')
-          | map('trim')
-          | select('ne','')
-          | list
-        )
-        | to_json | from_json
-      }}
+# - name: Build authoritative hostname list for looping
+#   ansible.builtin.set_fact:
+#     intersight_target_hostnames_list: >-
+#       {{
+#         (
+#           (intersight_target_hostnames | default('') | string).split('\n')
+#           | map('trim')
+#           | select('ne','')
+#           | list
+#         )
+#         | to_json | from_json
+#       }}
 
 - name: Debug hostname list (temporary)
   ansible.builtin.debug:
