@@ -18,13 +18,9 @@
   ansible.builtin.set_fact:
     intersight_target_hostnames: "{{ (intersight_target_hostnames | default('') | string).split('\n') }}"
 
-# - name: Trim and drop empty lines
+# - name: De-duplicate hostnames (after normalization)
 #   ansible.builtin.set_fact:
-#     intersight_target_hostnames: "{{ intersight_target_hostnames | map('trim') | select('ne','') | list }}"
-
-- name: De-duplicate hostnames (after normalization)
-  ansible.builtin.set_fact:
-    intersight_target_hostnames: "{{ intersight_target_hostnames | unique | list }}"
+#     intersight_target_hostnames: "{{ intersight_target_hostnames | unique }}"
 
 - name: Debug hostnames right before API work (temporary)
   ansible.builtin.debug:
