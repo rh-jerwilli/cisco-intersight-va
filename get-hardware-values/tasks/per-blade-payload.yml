@@ -49,7 +49,7 @@
   loop_control:
     loop_var: item
 
-- name: ["Upsert host record for `{{ blade_item.Name }}` (keyed by name)"]
+- name: Upsert host record for {{ blade_item.Name }} (keyed by name)
   ansible.builtin.set_fact:
     _hosts: >-
       {{
