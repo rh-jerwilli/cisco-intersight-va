@@ -60,6 +60,12 @@
   ansible.builtin.set_fact:
     _blades_by_name: "{{ dict((_blades.api_response | default([])) | map(attribute='Name') | zip((_blades.api_response | default([]))) ) }}"
 
+- name: Debug before missing check (temporary)
+  ansible.builtin.debug:
+    msg:
+      - "hostnames={{ intersight_target_hostnames }}"
+      - "blade_names={{ _blades_by_name.keys() | list }}"
+
 - name: Identify missing hostnames
   ansible.builtin.set_fact:
     _missing_hostnames: "{{ intersight_target_hostnames | difference(_blades_by_name.keys() | list) }}"
