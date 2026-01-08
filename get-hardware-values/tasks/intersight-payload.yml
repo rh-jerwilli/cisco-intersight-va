@@ -60,7 +60,7 @@
   ansible.builtin.debug:
     msg:
       - "hostnames={{ intersight_target_hostnames }}"
-      - "blade_names={{ _blades_by_name.keys() | list }}"
+      - "blade_names={{ _blades_by_name.keys() }}"
 
 - name: Identify missing hostnames
   ansible.builtin.set_fact:
