@@ -24,6 +24,7 @@
           else (intersight_target_hostnames | join('\n'))
         )
         | replace('\r','')
+        | replace('\\n', '\n')
         | regex_replace(',', '\n')
         | split('\n')
         | map('trim')
@@ -31,6 +32,13 @@
         | unique
         | list
       }}
+
+- name: Validate hostname input is non-empty
+  ansible.builtin.assert:
+    that:
+      - intersight_target_hostnames_list | length > 0
+    fail_msg: "Paste one blade hostname per line (or comma-separated) into intersight_target_hostnames."
+
 
 - name: Debug canonical list (temporary)
   ansible.builtin.debug:
