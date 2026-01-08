@@ -14,46 +14,33 @@
       Missing INTERSIGHT_API_KEY_ID and/or INTERSIGHT_API_PRIVATE_KEY.
       Ensure your AAP custom credential injects these environment variables.
 
-# - name: Canonicalize target hostnames into a real list (whitespace + comma tolerant)
-#   ansible.builtin.set_fact:
-#     intersight_target_hostnames_list: >-
-#       {{
-#         (
-#           intersight_target_hostnames
-#           if intersight_target_hostnames is string
-#           else (intersight_target_hostnames | join(' '))
-#         )
-#         | string
-#         | replace('\r', ' ')
-#         | replace('\\n', ' ')          # handles literal backslash-n
-#         | regex_replace(',', ' ')      # commas become spaces
-#         | regex_findall('[^\\s]+')     # split on ANY whitespace
-#         | map('trim')
-#         | reject('equalto','')
-#         | unique
-#         | list
-#       }}
+- name: Normalize input into one string (handles string OR list)
+  ansible.builtin.set_fact:
+    _targets_raw: >-
+      {{
+        (intersight_target_hostnames | join('\n'))
+        if (intersight_target_hostnames is sequence and intersight_target_hostnames is not string)
+        else (intersight_target_hostnames | string)
+      }}
 
-- name: Canonicalize target hostnames into a real list (whitespace + comma tolerant)
+- name: Split raw into a real hostname list
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: >-
       {{
-        (
-          intersight_target_hostnames
-          if intersight_target_hostnames is string
-          else (intersight_target_hostnames | join(' '))
-        )
-        | string
-        | replace('\r', ' ')
-        | replace('\\n', ' ')
-        | regex_replace(',', ' ')
-        | regex_findall('[^\\s]+')
+        _targets_raw
+        | replace('\r', '\n')
+        | replace('\\n', '\n')
+        | regex_replace(',', '\n')
+        | split('\n')
         | map('trim')
         | reject('equalto','')
         | unique
         | list
       }}
 
+- name: Debug canonical list (temporary)
+  ansible.builtin.debug:
+    var: intersight_target_hostnames_list
 - name: Validate hostname input is non-empty
   ansible.builtin.assert:
     that:
