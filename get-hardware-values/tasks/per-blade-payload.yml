@@ -53,7 +53,7 @@
   ansible.builtin.set_fact:
     _hosts: >-
       {{
-        _hosts + [
+        (_hosts | default([])) + [
           {
             'name': blade_item.Name,
             'bmcUsername': '',
