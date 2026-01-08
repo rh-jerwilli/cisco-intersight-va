@@ -26,13 +26,9 @@
 #         | list
 #       }}
 
-- name: Validate hostnames list
-  ansible.builtin.assert:
-    that:
-      - intersight_target_hostnames | length > 0
-      - (intersight_target_hostnames | unique | length) == (intersight_target_hostnames | length)
-    fail_msg: >
-      Paste one hostname per line into intersight_target_hostnames.
+- name: De-duplicate hostnames
+  ansible.builtin.set_fact:
+    intersight_target_hostnames: "{{ intersight_target_hostnames | unique | list }}"
 
 
 - name: Ensure output directory exists
