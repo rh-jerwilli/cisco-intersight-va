@@ -14,37 +14,27 @@
       Missing INTERSIGHT_API_KEY_ID and/or INTERSIGHT_API_PRIVATE_KEY.
       Ensure your AAP custom credential injects these environment variables.
 
-# - name: Normalize hostnames (AAP passes block scalar string)
-#   ansible.builtin.set_fact:
-#     intersight_target_hostnames: "{{ (intersight_target_hostnames | default('') | string).split('\n') }}"
-
-- name: Normalize intersight_target_hostnames into a list
+- name: Canonicalize target hostnames into a real list
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: >-
       {{
         (
           intersight_target_hostnames
-          | default('')
-          | string
-          | replace('\r', '')
-          | regex_replace(',', '\n')
-          | split('\n')
+          if intersight_target_hostnames is string
+          else (intersight_target_hostnames | join('\n'))
         )
+        | replace('\r','')
+        | regex_replace(',', '\n')
+        | split('\n')
         | map('trim')
         | reject('equalto','')
         | unique
         | list
       }}
 
-- name: Debug normalized hostnames (temporary)
+- name: Debug canonical list (temporary)
   ansible.builtin.debug:
-    msg:
-      - "type={{ intersight_target_hostnames_list | type_debug }}"
-      - "value={{ intersight_target_hostnames_list }}"
-
-# - name: De-duplicate hostnames (after normalization)
-#   ansible.builtin.set_fact:
-#     intersight_target_hostnames: "{{ intersight_target_hostnames | unique }}"
+    var: intersight_target_hostnames_list
 
 - name: Debug hostnames right before API work (temporary)
   ansible.builtin.debug:
@@ -59,17 +49,6 @@
     state: directory
     mode: "0750"
 
-- name: Normalize hostnames (AAP passes block scalar string)
-  ansible.builtin.set_fact:
-    intersight_target_hostnames: >-
-      {{
-        (intersight_target_hostnames | default('') | string)
-        .split('\n')
-        | map('trim')
-        | select('ne','')
-        | list
-      }}
-
 - name: Validate hostname input is non-empty
   ansible.builtin.assert:
     that:
@@ -81,39 +60,11 @@
     _target_blades: []
     _missing_hostnames: []
 
-# - name: Build authoritative hostname list for looping
-#   ansible.builtin.set_fact:
-#     intersight_target_hostnames_list: >-
-#       {{
-#         (
-#           (intersight_target_hostnames | default('') | string).split('\n')
-#           | map('trim')
-#           | select('ne','')
-#           | list
-#         )
-#         | to_json | from_json
-#       }}
-
 - name: Debug hostname list (temporary)
   ansible.builtin.debug:
     msg:
       - "type={{ intersight_target_hostnames_list | type_debug }}"
       - "value={{ intersight_target_hostnames_list }}"
-
-# - name: Query each blade by hostname
-#   cisco.intersight.intersight_rest_api:
-#     return_list: true
-#     api_uri: "{{ intersight_api_uri }}"
-#     api_key_id: "{{ intersight_api_key_id }}"
-#     api_private_key: "{{ (intersight_api_private_key | b64decode) | trim }}"
-#     resource_path: /compute/Blades
-#     query_params:
-#       $filter: "Name eq '{{ item }}'"
-#       $select: "Name,Moid,Model,Serial"
-#   loop: "{{ intersight_target_hostnames_list }}"
-#   loop_control:
-#     label: "{{ item }}"
-#   register: _blade_queries
 
 - name: Query each blade by hostname
   cisco.intersight.intersight_rest_api:
