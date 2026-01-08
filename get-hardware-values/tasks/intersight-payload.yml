@@ -57,6 +57,25 @@
     _target_blades: []
     _missing_hostnames: []
 
+- name: Build authoritative hostname list for looping
+  ansible.builtin.set_fact:
+    intersight_target_hostnames_list: >-
+      {{
+        (
+          (intersight_target_hostnames | default('') | string).split('\n')
+          | map('trim')
+          | select('ne','')
+          | list
+        )
+        | to_json | from_json
+      }}
+
+- name: Debug hostname list (temporary)
+  ansible.builtin.debug:
+    msg:
+      - "type={{ intersight_target_hostnames_list | type_debug }}"
+      - "value={{ intersight_target_hostnames_list }}"
+
 - name: Query each blade by hostname
   cisco.intersight.intersight_rest_api:
     return_list: true
@@ -67,7 +86,7 @@
     query_params:
       $filter: "Name eq '{{ item }}'"
       $select: "Name,Moid,Model,Serial"
-  loop: "{{ intersight_target_hostnames }}"
+  loop: "{{ intersight_target_hostnames_list }}"
   loop_control:
     label: "{{ item }}"
   register: _blade_queries
