@@ -124,7 +124,7 @@
       Make sure you pasted blade hostnames (not chassis names) and that Intersight inventory is up to date.
 
 - name: Build one host entry per blade
-  ansible.builtin.include_tasks: per_blade_payload.yml
+  ansible.builtin.include_tasks: per-blade-payload.yml
   loop: "{{ _target_blades }}"
   loop_control:
     loop_var: blade_item
