@@ -134,6 +134,10 @@
       These hostnames were not found as compute.Blades in Intersight: {{ _missing_hostnames }}.
       Make sure you pasted blade hostnames (not chassis names) and that Intersight inventory is up to date.
 
+- name: Initialize hosts output list
+  ansible.builtin.set_fact:
+    _hosts: []
+
 - name: Build one host entry per blade
   ansible.builtin.include_tasks: per-blade-payload.yml
   loop: "{{ _target_blades }}"
