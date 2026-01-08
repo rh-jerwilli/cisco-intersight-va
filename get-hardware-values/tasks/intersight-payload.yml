@@ -23,16 +23,21 @@
         else (intersight_target_hostnames | string)
       }}
 
-- name: Split raw into a real hostname list (tokenize)
+- name: Split raw into a real hostname list (newline -> space -> split)
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: >-
       {{
-        _targets_raw
-        | replace('\r', ' ')
-        | replace('\\n', ' ')
-        | regex_replace('(?m)^\\s*-\\s*', ' ')
-        | regex_replace(',', ' ')
-        | regex_findall('[^\\s]+')
+        (
+          _targets_raw
+          | replace('\r', ' ')
+          | replace('\\n', ' ')
+          | replace('\n', ' ')
+          | regex_replace(',', ' ')
+          | regex_replace('\\s+', ' ')
+          | trim
+        ).split(' ')
+        | map('trim')
+        | reject('equalto','')
         | unique
         | list
       }}
