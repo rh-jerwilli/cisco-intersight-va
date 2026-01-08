@@ -49,27 +49,44 @@
   loop_control:
     loop_var: item
 
-- name: Deduplicate discovered hosts by name
-  ansible.builtin.set_fact:
-    _hosts: "{{ _hosts | unique(attribute='name') | list }}"
-
-- name: Append host record for {{ blade_item.Name }}
+- name: ["Upsert host record for `{{ blade_item.Name }}` (keyed by name)"]
   ansible.builtin.set_fact:
     _hosts: >-
       {{
-        (_hosts | default([])) + [
-          {
-            'name': blade_item.Name,
-            'bmcUsername': '',
-            'bmcPassword': '',
-            'bmcEndpoint': '',
-            'bootMACAddress': _boot_mac,
-            'interfaces': _interfaces_list,
-            'primaryMac': _boot_mac,
-            'IP': ''
-          }
-        ]
+        (
+          (_hosts | default([]) | rejectattr('name', 'equalto', blade_item.Name) | list)
+          + [
+              {
+                'name': blade_item.Name,
+                'bmcUsername': '',
+                'bmcPassword': '',
+                'bmcEndpoint': '',
+                'bootMACAddress': _boot_mac,
+                'interfaces': _interfaces_list,
+                'primaryMac': _boot_mac,
+                'IP': ''
+              }
+            ]
+        )
       }}
+
+# - name: Append host record for {{ blade_item.Name }}
+#   ansible.builtin.set_fact:
+#     _hosts: >-
+#       {{
+#         (_hosts | default([])) + [
+#           {
+#             'name': blade_item.Name,
+#             'bmcUsername': '',
+#             'bmcPassword': '',
+#             'bmcEndpoint': '',
+#             'bootMACAddress': _boot_mac,
+#             'interfaces': _interfaces_list,
+#             'primaryMac': _boot_mac,
+#             'IP': ''
+#           }
+#         ]
+#       }}
 
 - name: Export host list as job artifacts
   ansible.builtin.set_stats:
