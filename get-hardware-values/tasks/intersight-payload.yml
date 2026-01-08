@@ -18,22 +18,22 @@
 #   ansible.builtin.set_fact:
 #     intersight_target_hostnames: "{{ (intersight_target_hostnames | default('') | string).split('\n') }}"
 
-- name: Normalize user-provided hostnames into a list
+- name: Normalize intersight_target_hostnames into a list
   set_fact:
     blade_hostnames_list: >-
       {{
         (
-          blade_hostnames
+          intersight_target_hostnames
+          | default('')
           | string
           | replace('\r', '')
           | regex_replace(',', '\n')
-          | splitlines()
+          | split('\n')
         )
         | map('trim')
-        | reject('equalto', '')
+        | reject('equalto','')
         | list
       }}
-
 
 # - name: De-duplicate hostnames (after normalization)
 #   ansible.builtin.set_fact:
