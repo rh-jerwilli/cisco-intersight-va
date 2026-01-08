@@ -62,6 +62,16 @@
   ansible.builtin.set_fact:
     _blades_by_name: "{{ dict((_blades.api_response | default([])) | map(attribute='Name') | zip((_blades.api_response | default([]))) ) }}"
 
+- name: Normalize hostnames from multiline extra_vars (one per line)
+  ansible.builtin.set_fact:
+    intersight_target_hostnames: >-
+      {{
+        (intersight_target_hostnames | default('') | string)
+        | splitlines
+        | map('trim')
+        | select('ne','')
+        | list
+      }}
 - name: Identify missing hostnames
   ansible.builtin.set_fact:
     _missing_hostnames: "{{ intersight_target_hostnames | difference(_blades_by_name.keys() | list) }}"
