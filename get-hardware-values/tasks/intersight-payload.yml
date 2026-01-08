@@ -14,6 +14,26 @@
       Missing INTERSIGHT_API_KEY_ID and/or INTERSIGHT_API_PRIVATE_KEY.
       Ensure your AAP custom credential injects these environment variables.
 
+# - name: Canonicalize target hostnames into a real list (whitespace + comma tolerant)
+#   ansible.builtin.set_fact:
+#     intersight_target_hostnames_list: >-
+#       {{
+#         (
+#           intersight_target_hostnames
+#           if intersight_target_hostnames is string
+#           else (intersight_target_hostnames | join(' '))
+#         )
+#         | string
+#         | replace('\r', ' ')
+#         | replace('\\n', ' ')          # handles literal backslash-n
+#         | regex_replace(',', ' ')      # commas become spaces
+#         | regex_findall('[^\\s]+')     # split on ANY whitespace
+#         | map('trim')
+#         | reject('equalto','')
+#         | unique
+#         | list
+#       }}
+
 - name: Canonicalize target hostnames into a real list (whitespace + comma tolerant)
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: >-
@@ -25,9 +45,9 @@
         )
         | string
         | replace('\r', ' ')
-        | replace('\\n', ' ')          # handles literal backslash-n
-        | regex_replace(',', ' ')      # commas become spaces
-        | regex_findall('[^\\s]+')     # split on ANY whitespace
+        | replace('\\n', ' ')
+        | regex_replace(',', ' ')
+        | regex_findall('[^\\s]+')
         | map('trim')
         | reject('equalto','')
         | unique
