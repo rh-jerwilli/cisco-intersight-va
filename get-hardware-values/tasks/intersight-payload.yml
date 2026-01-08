@@ -35,72 +35,72 @@
     state: directory
     mode: "0750"
 
-- name: Fetch blades (bounded by prefix if provided)
+- name: Normalize hostnames (AAP passes block scalar string)
+  ansible.builtin.set_fact:
+    intersight_target_hostnames: >-
+      {{
+        (intersight_target_hostnames | default('') | string)
+        .split('\n')
+        | map('trim')
+        | select('ne','')
+        | list
+      }}
+
+- name: Validate hostname input is non-empty
+  ansible.builtin.assert:
+    that:
+      - intersight_target_hostnames | length > 0
+    fail_msg: "Paste one blade hostname per line into intersight_target_hostnames."
+
+- name: Initialize target blade list and missing list
+  ansible.builtin.set_fact:
+    _target_blades: []
+    _missing_hostnames: []
+
+- name: Query each blade by hostname
   cisco.intersight.intersight_rest_api:
     return_list: true
     api_uri: "{{ intersight_api_uri }}"
     api_key_id: "{{ intersight_api_key_id }}"
-    api_private_key: "{{ intersight_api_private_key | b64decode }}"
+    api_private_key: "{{ (intersight_api_private_key | b64decode) | trim }}"
     resource_path: /compute/Blades
     query_params:
-      $top: "{{ intersight_discover_top | default(500) }}"
+      $filter: "Name eq '{{ item }}'"
       $select: "Name,Moid,Model,Serial"
-      $filter: >-
-        {{
-          (intersight_name_prefix | default('', true) | length > 0)
-          | ternary("startswith(Name,'{{ intersight_name_prefix }}')", omit)
-        }}
-  register: _blades
+  loop: "{{ intersight_target_hostnames }}"
+  loop_control:
+    label: "{{ item }}"
+  register: _blade_queries
 
-- name: Build lookup map of blades by Name
+- name: Accumulate found blades and missing hostnames
   ansible.builtin.set_fact:
-    _blades_by_name: "{{ dict((_blades.api_response | default([])) | map(attribute='Name') | zip((_blades.api_response | default([]))) ) }}"
-
-- name: Debug before missing check (temporary)
-  ansible.builtin.debug:
-    msg:
-      - "hostnames={{ intersight_target_hostnames }}"
-      - "blade_names={{ _blades_by_name.keys() }}"
-
-- name: Identify missing hostnames
-  ansible.builtin.set_fact:
-    _missing_hostnames: "{{ intersight_target_hostnames }}"
-    # _missing_hostnames: "{{ intersight_target_hostnames | difference(_blades_by_name.keys() ) }}"
+    _target_blades: >-
+      {{
+        _target_blades
+        + (
+            (item.api_response | default([]))[:1]
+            if ((item.api_response | default([])) | length > 0)
+            else []
+          )
+      }}
+    _missing_hostnames: >-
+      {{
+        _missing_hostnames
+        + (
+            [item.item]
+            if ((item.api_response | default([])) | length == 0)
+            else []
+          )
+      }}
+  loop: "{{ _blade_queries.results }}"
+  loop_control:
+    label: "{{ item.item }}"
 
 - name: Fail if any hostnames are missing
   ansible.builtin.assert:
     that:
       - _missing_hostnames | length == 0
     fail_msg: >
-      These hostnames were not found in the fetched blade set: {{ _missing_hostnames }}.
-      Increase intersight_discover_top or set intersight_name_prefix.
+      These hostnames were not found as compute.Blades in Intersight: {{ _missing_hostnames }}.
+      Make sure you pasted blade hostnames (not chassis names) and that Intersight inventory is up to date.
 
-- name: Build ordered target blades list
-  ansible.builtin.set_fact:
-    _target_blades: "{{ intersight_target_hostnames | map('extract', _blades_by_name) }}"
-
-- name: Initialize hosts list
-  ansible.builtin.set_fact:
-    _hosts: []
-
-- name: Build one host entry per blade
-  ansible.builtin.include_tasks: per_blade_payload.yml
-  loop: "{{ _target_blades }}"
-  loop_control:
-    loop_var: blade_item
-
-- name: Set final payload fact for workflow consumption
-  ansible.builtin.set_fact:
-    intersight_hosts_payload:
-      hosts: "{{ _hosts }}"
-
-- name: Publish payload as AAP workflow artifact
-  ansible.builtin.set_stats:
-    data:
-      intersight_hosts_payload: "{{ intersight_hosts_payload }}"
-    per_host: false
-
-- name: Write payload file artifact
-  ansible.builtin.copy:
-    dest: "{{ intersight_out_dir | default('./out') }}/{{ intersight_artifact_filename | default('hosts_payload.yml') }}"
-    content: "{{ intersight_hosts_payload | to_nice_yaml(indent=2) }}"
