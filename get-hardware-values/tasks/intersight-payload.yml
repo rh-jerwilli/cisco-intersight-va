@@ -14,20 +14,24 @@
       Missing INTERSIGHT_API_KEY_ID and/or INTERSIGHT_API_PRIVATE_KEY.
       Ensure your AAP custom credential injects these environment variables.
 
-- name: Normalize hostnames from multiline extra_vars (one per line)
+- name: Normalize hostnames (AAP passes block scalar string)
   ansible.builtin.set_fact:
-    intersight_target_hostnames: >-
-      {{
-        (intersight_target_hostnames | default('') | string)
-        | split('\n')
-        | map('trim')
-        | select('ne','')
-        | list
-      }}
+    intersight_target_hostnames: "{{ (intersight_target_hostnames | default('') | string).split('\n') }}"
 
-- name: De-duplicate hostnames
+- name: Trim and drop empty lines
+  ansible.builtin.set_fact:
+    intersight_target_hostnames: "{{ intersight_target_hostnames | map('trim') | select('ne','') | list }}"
+
+- name: De-duplicate hostnames (after normalization)
   ansible.builtin.set_fact:
     intersight_target_hostnames: "{{ intersight_target_hostnames | unique | list }}"
+
+- name: Debug hostnames right before API work (temporary)
+  ansible.builtin.debug:
+    msg:
+      - "type={{ intersight_target_hostnames | type_debug }}"
+      - "value={{ intersight_target_hostnames }}"
+
 
 - name: Ensure output directory exists
   ansible.builtin.file:
