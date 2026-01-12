@@ -81,6 +81,6 @@
 - name: Export host list as job artifacts (deduped, final)
   ansible.builtin.set_stats:
     data:
-      discovered_hosts: "{{ _hosts | unique(attribute='name') | list }}"
+      hosts: "{{ _hosts | unique(attribute='name') | list }}"
     aggregate: false
     per_host: false
