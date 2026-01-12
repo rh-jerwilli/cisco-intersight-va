@@ -78,7 +78,7 @@
                 'bootMACAddress': _boot_mac,
                 'interfaces': _interfaces_list,
                 'primaryMac': _boot_mac,
-                'IP': _blade_ip
+                'IP': ''
               }
             ]
         )
