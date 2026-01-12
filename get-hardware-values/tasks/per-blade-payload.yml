@@ -53,9 +53,15 @@
   ansible.builtin.set_fact:
     _bmc_endpoint: "redfish://127.0.0.1/redfish/v1/Systems/System.Embedded.1{{ blade_item.Serial }}"
 
-- name: Run ipv4 for {{ blade_item.Name }}
-  ansible.builtin.set_fact:
-    _blade_ip: "{{ _vnics.api_response.Ipv4Address }}"
+- name: Inspect blade object for IP references
+  ansible.builtin.debug:
+    msg:
+      blade_keys: "{{ blade_item.keys() | list }}"
+      blade_sample: "{{ blade_item }}"
+
+# - name: Run ipv4 for {{ blade_item.Name }}
+#   ansible.builtin.set_fact:
+#     _blade_ip: "{{ _vnics.api_response.Ipv4Address }}"
 
 - name: Upsert host record for {{ blade_item.Name }} (keyed by name)
   ansible.builtin.set_fact:
