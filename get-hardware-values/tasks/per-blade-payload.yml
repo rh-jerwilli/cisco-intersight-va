@@ -8,7 +8,7 @@
     resource_path: /server/Profiles
     query_params:
       $filter: "AssignedServer.Moid eq '{{ blade_item.Moid }}'"
-      $select: "Name,Moid,AssignedServer,SrcTemplate,Serial,Ipv4Address"
+      $select: "Name,Moid,AssignedServer,SrcTemplate,Serial"
   register: profiles
 
 - name: Fail if no profile is assigned to {{ blade_item.Name }}
@@ -31,7 +31,7 @@
     resource_path: /vnic/EthIfs
     query_params:
       $filter: "Profile.Moid eq '{{ profile_moid }}'"
-      $select: "Name,MacAddress,AssignmentMode,Placement,Profile,Ipv4Address"
+      $select: "Name,MacAddress,AssignmentMode,Placement,Profile"
   register: _vnics
 
 - name: Choose boot MAC for {{ blade_item.Name }}
@@ -53,15 +53,9 @@
   ansible.builtin.set_fact:
     _bmc_endpoint: "redfish://127.0.0.1/redfish/v1/Systems/System.Embedded.1{{ blade_item.Serial }}"
 
-- name: Inspect blade object for IP references
-  ansible.builtin.debug:
-    msg:
-      blade_keys: "{{ blade_item.keys() | list }}"
-      blade_sample: "{{ blade_item }}"
-
-# - name: Run ipv4 for {{ blade_item.Name }}
-#   ansible.builtin.set_fact:
-#     _blade_ip: "{{ _vnics.api_response.Ipv4Address }}"
+- name: Lookup optional host IP for {{ blade_item.Name }}
+  ansible.builtin.set_fact:
+    _host_ip: "{{ intersight_host_ip_map.get(blade_item.Name, '') }}"
 
 - name: Upsert host record for {{ blade_item.Name }} (keyed by name)
   ansible.builtin.set_fact:
@@ -78,7 +72,7 @@
                 'bootMACAddress': _boot_mac,
                 'interfaces': _interfaces_list,
                 'primaryMac': _boot_mac,
-                'IP': ''
+                'IP': _host_ip
               }
             ]
         )
