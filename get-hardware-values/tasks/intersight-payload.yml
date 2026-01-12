@@ -23,9 +23,25 @@
         else (intersight_target_hostnames | string)
       }}
 
-- name: Initialize hostname list
+- name: Initialize hostname list/IP map
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: []
+    intersight_host_ip_map: {}
+
+- name: Parse input lines (accept Hostname OR Hostname,IP)
+  ansible.builtin.set_fact:
+    intersight_target_hostnames_list: "{{ intersight_target_hostnames_list + [ _hostname ] }}"
+    intersight_host_ip_map: "{{ intersight_host_ip_map | combine(_ip_map) }}"
+  vars:
+    _line: "{{ item | trim }}"
+    _parts: "{{ _line.split(',') }}"
+    _hostname: "{{ (_parts[0] | default('') | trim) }}"
+    _ip: "{{ (_parts[1] | default('') | trim) }}"
+    _ip_map: "{{ (_ip | length > 0) | ternary({ _hostname: _ip }, {}) }}"
+  loop: "{{ _targets_raw | replace('\r','\n') | split('\n') }}"
+  when:
+    - _line | length > 0
+    - _hostname | length > 0
 
 - name: Add each hostname (handles newlines, spaces, commas)
   ansible.builtin.set_fact:
@@ -36,6 +52,7 @@
 - name: De-duplicate hostnames
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: "{{ intersight_target_hostnames_list | unique | list }}"
+
 
 - name: Validate hostname input is non-empty
   ansible.builtin.assert:
@@ -75,8 +92,7 @@
     resource_path: /compute/Blades
     query_params:
       $filter: "Name eq '{{ item }}'"
-      $select: "Name,Moid,Model,Serial,RegisteredDevice,Parent,Chassis,ComputeRackUnit,ComputeBlade"
-      $expand: "RegisteredDevice,Parent,Chassis,ComputeRackUnit,ComputeBlade"
+      $select: "Name,Moid,Model,Serial"
   loop: "{{ intersight_target_hostnames_list }}"
   register: _blade_queries
 
