@@ -23,27 +23,11 @@
         else (intersight_target_hostnames | string)
       }}
 
-# - name: Split raw into a real hostname list (regex newlines)
-#   ansible.builtin.set_fact:
-#     intersight_target_hostnames_list: >-
-#       {{
-#         (
-#           _targets_raw
-#           | regex_replace('[\\r\\n]+', ' ')
-#           | regex_replace(',', ' ')
-#           | regex_replace('\\s+', ' ')
-#           | trim
-#         ).split(' ')
-#         | reject('equalto','')
-#         | unique
-#         | list
-#       }}
-
 - name: Initialize hostname list
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: []
 
-- name: Add each tokenized hostname (handles newlines, spaces, commas)
+- name: Add each hostname (handles newlines, spaces, commas)
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: "{{ intersight_target_hostnames_list + [ item ] }}"
   loop: "{{ (_targets_raw | regex_replace('[\\r\\n,]+', ' ') | regex_replace('\\s+', ' ') | trim).split(' ') }}"
@@ -52,11 +36,6 @@
 - name: De-duplicate hostnames
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: "{{ intersight_target_hostnames_list | unique | list }}"
-
-- name: Debug final hostname list
-  ansible.builtin.debug:
-    var: intersight_target_hostnames_list
-
 
 - name: Validate hostname input is non-empty
   ansible.builtin.assert:

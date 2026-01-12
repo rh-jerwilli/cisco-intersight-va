@@ -8,7 +8,7 @@
     resource_path: /server/Profiles
     query_params:
       $filter: "AssignedServer.Moid eq '{{ blade_item.Moid }}'"
-      $select: "Name,Moid,AssignedServer,SrcTemplate"
+      $select: "Name,Moid,AssignedServer,SrcTemplate,Serial"
   register: profiles
 
 - name: Fail if no profile is assigned to {{ blade_item.Name }}
@@ -49,6 +49,10 @@
   loop_control:
     loop_var: item
 
+- name: Build BMC endpoint for {{ blade_item.Name }}
+  ansible.builtin.set_fact:
+    _bmc_endpoint: "redfish://127.0.0.1/redfish/v1/Systems/System.Embedded.1{{ blade_item.Serial }}"
+
 - name: Upsert host record for {{ blade_item.Name }} (keyed by name)
   ansible.builtin.set_fact:
     _hosts: >-
@@ -58,9 +62,9 @@
           + [
               {
                 'name': blade_item.Name,
-                'bmcUsername': '',
-                'bmcPassword': '',
-                'bmcEndpoint': '',
+                'bmcUsername': 'root',
+                'bmcPassword': 'password',
+                'bmcEndpoint': '_bmc_endpoint',
                 'bootMACAddress': _boot_mac,
                 'interfaces': _interfaces_list,
                 'primaryMac': _boot_mac,
@@ -69,24 +73,6 @@
             ]
         )
       }}
-
-# - name: Append host record for {{ blade_item.Name }}
-#   ansible.builtin.set_fact:
-#     _hosts: >-
-#       {{
-#         (_hosts | default([])) + [
-#           {
-#             'name': blade_item.Name,
-#             'bmcUsername': '',
-#             'bmcPassword': '',
-#             'bmcEndpoint': '',
-#             'bootMACAddress': _boot_mac,
-#             'interfaces': _interfaces_list,
-#             'primaryMac': _boot_mac,
-#             'IP': ''
-#           }
-#         ]
-#       }}
 
 - name: Export host list as job artifacts
   ansible.builtin.set_stats:
