@@ -64,7 +64,7 @@
                 'name': blade_item.Name,
                 'bmcUsername': 'root',
                 'bmcPassword': 'password',
-                'bmcEndpoint': '_bmc_endpoint',
+                'bmcEndpoint': _bmc_endpoint,
                 'bootMACAddress': _boot_mac,
                 'interfaces': _interfaces_list,
                 'primaryMac': _boot_mac,
