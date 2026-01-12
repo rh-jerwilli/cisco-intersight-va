@@ -51,7 +51,7 @@
 
 - name: Build BMC endpoint for {{ blade_item.Name }}
   ansible.builtin.set_fact:
-    _bmc_endpoint: "redfish://127.0.0.1/redfish/v1/Systems/System.Embedded.1{{ blade_item.Serial }}"
+    _bmc_endpoint: "redfish://{{ blade_item.MgmtIpAddress }}/redfish/v1/Systems/System.Embedded.1{{ blade_item.Serial }}"
 
 - name: Lookup optional host IP for {{ blade_item.Name }}
   ansible.builtin.set_fact:
@@ -81,4 +81,4 @@
 - name: Export host list as job artifacts
   ansible.builtin.set_stats:
     data:
-      discovered_hosts: "{{ _hosts }}"
+      _hosts: "{{ _hosts }}"

@@ -53,12 +53,6 @@
       hostnames: "{{ intersight_target_hostnames_list }}"
       ip_map: "{{ intersight_host_ip_map }}"
 
-# - name: Add each hostname (handles newlines, spaces, commas)
-#   ansible.builtin.set_fact:
-#     intersight_target_hostnames_list: "{{ intersight_target_hostnames_list + [ item ] }}"
-#   loop: "{{ (_targets_raw | regex_replace('[\\r\\n,]+', ' ') | regex_replace('\\s+', ' ') | trim).split(' ') }}"
-#   when: item | length > 0
-
 - name: De-duplicate hostnames
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: "{{ intersight_target_hostnames_list | unique | list }}"
@@ -102,7 +96,7 @@
     resource_path: /compute/Blades
     query_params:
       $filter: "Name eq '{{ item }}'"
-      $select: "Name,Moid,Model,Serial"
+      $select: "Name,Moid,Model,Serial,MgmtIpAddress"
   loop: "{{ intersight_target_hostnames_list }}"
   register: _blade_queries
 
