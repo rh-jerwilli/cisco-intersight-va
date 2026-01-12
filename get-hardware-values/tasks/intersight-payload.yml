@@ -75,8 +75,8 @@
     resource_path: /compute/Blades
     query_params:
       $filter: "Name eq '{{ item }}'"
-      $select: "Name,Moid,Model,Serial"
-      $expand: "RegisteredDevice,Parent,Chassis,ComputeRackUnit,ComputeBlade"   # we’ll adjust once we see what’s valid
+      $select: "Name,Moid,Model,Serial,RegisteredDevice,Parent,Chassis,ComputeRackUnit,ComputeBlade"
+      $expand: "RegisteredDevice,Parent,Chassis,ComputeRackUnit,ComputeBlade"
   loop: "{{ intersight_target_hostnames_list }}"
   register: _blade_queries
 
