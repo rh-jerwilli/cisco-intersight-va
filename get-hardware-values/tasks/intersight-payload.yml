@@ -23,31 +23,41 @@
         else (intersight_target_hostnames | string)
       }}
 
-- name: Initialize hostname list/IP map
+- name: Initialize hostname list + optional hostname->IP map
   ansible.builtin.set_fact:
     intersight_target_hostnames_list: []
     intersight_host_ip_map: {}
 
 - name: Parse input lines (accept Hostname OR Hostname,IP)
   ansible.builtin.set_fact:
-    intersight_target_hostnames_list: "{{ intersight_target_hostnames_list + [ _hostname ] }}"
+    intersight_target_hostnames_list: "{{ intersight_target_hostnames_list + [ _hn ] }}"
     intersight_host_ip_map: "{{ intersight_host_ip_map | combine(_ip_map) }}"
   vars:
     _line: "{{ item | trim }}"
     _parts: "{{ _line.split(',') }}"
-    _hostname: "{{ (_parts[0] | default('') | trim) }}"
+    _hn: "{{ (_parts[0] | default('') | trim) }}"
     _ip: "{{ (_parts[1] | default('') | trim) }}"
-    _ip_map: "{{ (_ip | length > 0) | ternary({ _hostname: _ip }, {}) }}"
+    _ip_map: "{{ (_ip | length > 0) | ternary({ _hn: _ip }, {}) }}"
   loop: "{{ _targets_raw | replace('\r','\n') | split('\n') }}"
   when:
     - _line | length > 0
-    - _hostname | length > 0
+    - _hn | length > 0
 
-- name: Add each hostname (handles newlines, spaces, commas)
+- name: De-duplicate hostnames
   ansible.builtin.set_fact:
-    intersight_target_hostnames_list: "{{ intersight_target_hostnames_list + [ item ] }}"
-  loop: "{{ (_targets_raw | regex_replace('[\\r\\n,]+', ' ') | regex_replace('\\s+', ' ') | trim).split(' ') }}"
-  when: item | length > 0
+    intersight_target_hostnames_list: "{{ intersight_target_hostnames_list | unique | list }}"
+
+- name: Debug parsed inputs
+  ansible.builtin.debug:
+    msg:
+      hostnames: "{{ intersight_target_hostnames_list }}"
+      ip_map: "{{ intersight_host_ip_map }}"
+
+# - name: Add each hostname (handles newlines, spaces, commas)
+#   ansible.builtin.set_fact:
+#     intersight_target_hostnames_list: "{{ intersight_target_hostnames_list + [ item ] }}"
+#   loop: "{{ (_targets_raw | regex_replace('[\\r\\n,]+', ' ') | regex_replace('\\s+', ' ') | trim).split(' ') }}"
+#   when: item | length > 0
 
 - name: De-duplicate hostnames
   ansible.builtin.set_fact:
