@@ -8,7 +8,7 @@
     resource_path: /server/Profiles
     query_params:
       $filter: "AssignedServer.Moid eq '{{ blade_item.Moid }}'"
-      $select: "Name,Moid,AssignedServer,SrcTemplate,Serial,Ipv4Address"
+      $select: "Name,Moid,AssignedServer,SrcTemplate,Serial"
   register: profiles
 
 - name: Fail if no profile is assigned to {{ blade_item.Name }}
@@ -31,7 +31,7 @@
     resource_path: /vnic/EthIfs
     query_params:
       $filter: "Profile.Moid eq '{{ profile_moid }}'"
-      $select: "Name,MacAddress,AssignmentMode,Placement,Profile"
+      $select: "Name,MacAddress,AssignmentMode,Placement,Profile,Ipv4Address"
   register: _vnics
 
 - name: Choose boot MAC for {{ blade_item.Name }}
@@ -55,7 +55,7 @@
 
 - name: Run ipv4 for {{ blade_item.Name }}
   ansible.builtin.set_fact:
-    _blade_ip: "{{ blade_item.Ipv4Address }}"
+    _blade_ip: "{{ _vnics.Ipv4Address }}"
 
 - name: Upsert host record for {{ blade_item.Name }} (keyed by name)
   ansible.builtin.set_fact:
